@@ -8,6 +8,7 @@ import logging
 import time
 import threading
 import queue
+import platform
 
 from logging.handlers import RotatingFileHandler
 from typing import TYPE_CHECKING
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger("air_alert_icon")
 logger.setLevel(logging.INFO)
-handler = RotatingFileHandler("air_alert_icon_app.log", maxBytes=20000, backupCount=3, encoding="utf-8")
+handler = RotatingFileHandler("air_alert_icon_app.log", maxBytes=200_000_000, backupCount=1, encoding="utf-8")
 formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
@@ -57,7 +58,15 @@ class TrayIcon:
             self.title,
             menu=menu,
         )
-        self.notification_possible: bool = self.icon.HAS_NOTIFICATION
+        self.notification_possible: bool = self.icon.HAS_NOTIFICATION and TrayIcon.is_notification_possible()
+
+    @staticmethod
+    def is_notification_possible():
+        """Return True only from Windows"""
+        current_os = platform.system()
+        return current_os == "Windows"
+
+        
 
     def set_color_and_title(self, color: str, title: str) -> None:
         """Set color and title
@@ -205,10 +214,10 @@ class AlertMonitoringApp:
             return
         state_changed = False
         try:
-            logger.info(f"Response json: {data}")
+            logger.debug(f"Response json: {data}")
             status = data["states"][self.config.region_to_check_alert]
             if self.alert_status != status:
-                logger.info(
+                logger.debug(
                     f"There is change in alert status for {self.config.region_to_check_alert}"
                 )
                 state_changed = True
@@ -216,19 +225,19 @@ class AlertMonitoringApp:
             active_alert = status["alertnow"]
             state_since = status["changed"]
         except KeyError as ex:
-            logger.info(f"Error while parsing response from server: {ex}")
+            logger.exception(f"Error while parsing response from server: {ex}")
             self.icon.set_color_and_title(
                 "gray", "Помилка під час опрацювання даних від API тривог"
             )
         if active_alert:
-            logger.info("As Alert active, change color to RED")
+            logger.debug("As Alert active, change color to RED")
             self.icon.set_color_and_title(
                 "red", f"Тривога в {self.config.region_to_check_alert} з {state_since}"
             )
             if state_changed:
                 self.icon.notify("Оголошено тривогу!")
         else:
-            logger.info("As Alert not active, change color to GREEN")
+            logger.debug("As Alert not active, change color to GREEN")
             self.icon.set_color_and_title("green", f"Немає тривоги з {state_since}")
             if state_changed and self.alert_status:
                 self.icon.notify("Відбій тривоги")
@@ -262,7 +271,7 @@ class AlertMonitoringApp:
 
         while self.polling_thread and self.polling_thread.is_alive():
             try:
-                logger.info("Listening for message from polling thread...")
+                logger.debug("Listening for message from polling thread...")
                 message = self.updates_queue.get(timeout=1)
                 self.handle_worker_update(message)
             except queue.Empty:
