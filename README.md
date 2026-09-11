@@ -2,7 +2,11 @@
 
 A lightweight, cross-platform desktop application that monitors the operational status of air alerts in Ukraine for a specified region. The status is displayed visually via a system tray icon (e.g., Green for safe, Red for alert).
 
+Idea was to have quickly visible state of Air alert as tray icon.
+
 This project is designed for ease of use and minimal system resource consumption, providing real-time alerts based on external API data.
+
+WARNING: **Please, use _official source as primary source_ for alerts and do not rely only on this application**. Application provided AS IS, without any guarantee and use non-official volunteer's API to receive information about alerts. These sources do not provide any guarantee for accuracy or promptness of data. 
 
 ## 🚀 Features
 
@@ -17,7 +21,7 @@ Follow these steps to get the application running locally.
 
 ### Prerequisites
 
-*   Python 3.8+
+*   Python 3.13+
 *   A functioning virtual environment (recommended)
 
 ### 1. Clone the Repository
@@ -27,7 +31,7 @@ cd tray-alerts-icon
 ```
 
 ### 2. Install Dependencies
-The application relies on several external libraries. Install them using the following command:
+The application relies on several external libraries. Install them using the following command (inside your virtual env):
 ```bash
 pip install -r requirements.txt
 ```
@@ -38,8 +42,8 @@ The application uses `settings.ini` to connect to the air alert API. You must cu
 `settings.ini`
 ```ini
 [server]
-# The base URL for the air alert API
-url = "https://ubilling.net.ua/aerialalerts/"
+# Name of Alert API provider
+name = "ubilling.net.ua"
 # How often (in seconds) the application should poll the API
 interval = 5
 
@@ -52,6 +56,38 @@ region = "м. Київ"
 notifications = True
 ```
 > 💡 **Note:** Ensure the `region` value matches the expected format from the API.
+
+#### Supported regions:
+| Region |
+|---|
+| Хмельницька область |
+| Вінницька область |
+| Рівненська область |
+| Волинська область |
+| Дніпропетровська область |
+| Житомирська область |
+| Закарпатська область |
+| Запорізька область |
+| Івано-Франківська область |
+| Київська область |
+| Кіровоградська область |
+| Луганська область |
+| Миколаївська область |
+| Одеська область |
+| Полтавська область |
+| Сумська область |
+| Тернопільська область |
+| Харківська область |
+| Херсонська область |
+| Черкаська область |
+| Чернігівська область |
+| Чернівецька область |
+| Львівська область |
+| Донецька область |
+| Автономна Республіка Крим |
+| м. Севастополь |
+| м. Київ |
+
 
 ### 🏃 Usage
 
@@ -70,19 +106,27 @@ pyinstaller --onefile --noconsole main.py
 
 The system tray icon color visually represents the current alert status:
 
-| Color | Meaning | Description |
-| :--- | :--- | :--- |
-| **🟢 Green** | **No Alert** | The monitoring system has confirmed no active alerts in the specified region. |
-| **🔴 Red** | **Alert Detected** | Active air alert status has been received from the API. |
-| **🟡 Yellow** | **Parsing Error** | The API responded, but the data structure was unexpected or incomplete. Manual investigation of the API is needed. |
-| **⚫ Gray** | **Initial/No Data** | The application has initialized but has not yet received sufficient data to determine a status. |
-| **⚫ Black** | **Connection Failure** | A persistent network issue or API connection failure occurred (e.g., DNS error, timeout). |
+| Color          | Meaning                 | Description                                                                                                  |
+|:---------------|:------------------------|:-------------------------------------------------------------------------------------------------------------|
+| **🟢 Green**   | **No Alert**            | No active alerts in the specified region based on API response.                                              |
+| **🔴 Crimson** | **Alert**    | Active air alert status has been received from the API. No data from API related to threat level received.   |
+| **🔴 Red**     | **Alert: Red level**    | Active air alert status. Threat level is Red (high): ballistic missile, cruise missile, massive drone attack |
+| **🟡 Yellow**  | **Alert: Yellow level** | Active air alert status. Threat level is Yellow (medium): drone attack                                       |
+| **⚫ Gray**     | **Initial/No Data**     | The application has initialized but has not yet received sufficient data to determine a status.              |
+| **⚫ Black**    | **Connection Failure**  | A persistent network issue or API connection failure occurred (e.g., DNS error, timeout).                    |
 
 ## 📖 Project Structure
 
-- `main.py`: Contains the core application logic, managing polling threads and updating the tray icon.
+- `main.py`: Start application.
+- `app.py`: Application bootstrap API polling worker and tray icon state updator.
+- `icon.py`: TrayIcon class and related structures.
+- `config.py`: Configuration class. Load/Save .ini file.
+- `worker.py`: PollingThread class responsible for execution of Alert API providers.
+- `providers\base.py`: Base class for AlertProvider
+- `providers\ubilling.py`: Provider class for API of `ubilling.net.ua/aerialalerts`
 - `settings.ini`: Configuration file for API details and region.
 - `requirements.txt`: Lists all Python dependencies required for the project to run.
+- `requirements-dev.txt`: Lists all Python dependencies required for the project to run, check and buid.
 
 ## 🤝 Contributing
 
