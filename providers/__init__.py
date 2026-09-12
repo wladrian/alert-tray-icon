@@ -1,4 +1,5 @@
 """Module of AlertProviders and friends"""
+
 from .base import (
     AlertProvider,
     AlertProviderResult,

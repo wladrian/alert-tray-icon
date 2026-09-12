@@ -31,3 +31,6 @@ jobs:
     - name: Test with mypy
       run: |
         mypy .
+    - name: Check formatiing with Black
+      run: |
+        black --check .

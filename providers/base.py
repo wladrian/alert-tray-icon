@@ -1,4 +1,5 @@
 """Alert provider base class and related structures"""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
@@ -6,6 +7,7 @@ from enum import Enum, IntEnum, auto
 
 class AirAlertLevel(Enum):
     """Air Alert levels Enum"""
+
     YELLOW = 1  # Single drone
     RED = 2  # Massive drone attack, or ballistic missile, or cruise missile
     UNKNOWN = 3  # Air alert but level could not be determined
@@ -13,6 +15,7 @@ class AirAlertLevel(Enum):
 
 class AlertType(Enum):
     """Alert types Enum"""
+
     AIR_RAID = 1
     ARTILLERY_SHELLING = 2
     URBAN_FIGHTS = 3
@@ -22,6 +25,7 @@ class AlertType(Enum):
 
 class ProviderResponseStatus(IntEnum):
     """Provider Response Status Enum"""
+
     INIT = auto()
     SUCCESS = auto()
     API_ERROR = auto()
@@ -33,6 +37,7 @@ class ProviderResponseStatus(IntEnum):
 
 class RegionUID(IntEnum):
     """Ukraine Regions UID Enum"""
+
     KHMELNYTSKYI = 3
     VINNYTSIA = 4
     RIVNE = 5
@@ -97,6 +102,7 @@ REGION_UID_BY_NAME = {
 @dataclass
 class AlertState:
     """Alert State"""
+
     alert: bool
     level: AirAlertLevel
     since: str
@@ -105,6 +111,7 @@ class AlertState:
 @dataclass
 class AlertProviderResult:
     """Alert Provider Resul. Encapsulate status of result, data and source"""
+
     status: ProviderResponseStatus
     source: str | None = None
     states: dict[int, AlertState | None] | None = None
@@ -115,6 +122,7 @@ class AlertProviderResult:
 
 class AlertProvider(ABC):
     """Base class for Alert Provider"""
+
     BASE_URL: str
     REQUEST_LIMIT: int
 
