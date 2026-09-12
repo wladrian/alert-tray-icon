@@ -24,10 +24,12 @@ dev = [
 check_untyped_defs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
-
 show_error_codes = true
 pretty = true
 
 [[tool.mypy.overrides]]
 module = ["pystray.*"]
 ignore_missing_imports = true
+
+[tool.pylint.format]
+max-line-length = 120
