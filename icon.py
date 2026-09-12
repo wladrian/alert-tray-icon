@@ -48,7 +48,7 @@ class TrayIcon:
         )
 
     @staticmethod
-    def is_notification_possible():
+    def is_notification_possible() -> bool:
         """Return True only from Windows"""
         current_os = platform.system()
         return current_os == "Windows"

@@ -15,6 +15,7 @@ logger = logging.getLogger("air_alert_icon")
 
 
 class UbillingProvider(AlertProvider):
+    """Alert provider ubilling.net.ua"""
     BASE_URL: str = "https://ubilling.net.ua/aerialalerts/"
     REQUEST_LIMIT: int = 5  # seconds
     TIMEOUT: int = 5  # seconds
@@ -42,7 +43,7 @@ class UbillingProvider(AlertProvider):
             result.status = ProviderResponseStatus.NETWORK_ERROR
         return result
 
-    def extract_alert_state(self, result: AlertProviderResult):
+    def extract_alert_state(self, result: AlertProviderResult) -> None:
         try:
             raw_data = result.raw_data
             if raw_data is None:

@@ -124,12 +124,10 @@ class AlertProvider(ABC):
     @abstractmethod
     def request(self) -> AlertProviderResult:
         """Return provider-specific raw response"""
-        pass
 
     @abstractmethod
     def extract_alert_state(self, result: AlertProviderResult) -> None:
         """Convert provider response to application"""
-        pass
 
     def get_data(self) -> AlertProviderResult:
         """Get alert data from provider"""

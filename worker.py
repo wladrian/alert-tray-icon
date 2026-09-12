@@ -44,7 +44,7 @@ class PollingThread(threading.Thread):
                         time.sleep(self.interval * 2)
                         self.interval += 1
 
-            except Exception as exc:
+            except Exception as exc: # pylint: disable=broad-exception-caught
                 logger.exception(exc)
                 self.results_queue.put(
                     AlertProviderResult(status=ProviderResponseStatus.UNKNOWN_PROVIDER_ERROR)

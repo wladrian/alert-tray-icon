@@ -1,3 +1,4 @@
+"""AlertMonitoringApp class"""
 import logging
 import threading
 import queue

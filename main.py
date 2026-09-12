@@ -11,7 +11,7 @@ from app import AlertMonitoringApp
 logger = logging.getLogger("air_alert_icon")
 
 
-def setup_logger():
+def setup_logger() -> None:
     """Setup application logger to log file"""
     logger.setLevel(logging.DEBUG)
     handler = RotatingFileHandler(
