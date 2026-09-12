@@ -1,4 +1,5 @@
 """AlertMonitoringApp class"""
+
 import logging
 import threading
 import queue
@@ -72,12 +73,14 @@ class AlertMonitoringApp:
         alert_data = data.states[region_uid]
         if alert_data is None:
             self.icon.set_color_and_title(
-                "green", f"Немає тривоги в {self.config.region_to_check_alert} [{data.source}]"
+                "green",
+                f"Немає тривоги в {self.config.region_to_check_alert} [{data.source}]",
             )
             return
         if self.alert_status != alert_data:
             logger.debug(
-                f"There is change in alert status for {self.config.region_to_check_alert}"
+                "There is change in alert status for %s",
+                self.config.region_to_check_alert,
             )
             state_changed = True
 
@@ -154,10 +157,11 @@ class AlertMonitoringApp:
     def on_exit(self, icon: "Icon", item: MenuItem) -> None:
         """Stop running polling thread and icon app
 
-        :param icon: pystray Icon object
-        :param item: pystay MenuItem object
+            :param icon: pystray Icon object
+            :param item: pystay MenuItem object
+        logger.debug("Toggle menu item %s", item)
         """
-        logger.debug(f"Toggle menu item {item}")
+        logger.debug("Toggle menu item %s", item)
         if self.polling_thread:
             self.polling_thread.stop()
             self.polling_thread.join()
@@ -166,10 +170,11 @@ class AlertMonitoringApp:
     def is_notifications_enabled(self, item: MenuItem) -> bool:
         """Returns True is notifications in tray are enabled
 
-        :param item: pystay Menu Item object
-        :returns: True, if notifications enabled, False otherwise
+            :param item: pystay Menu Item object
+        logger.debug("Toggle menu item %s", item)
+            :returns: True, if notifications enabled, False otherwise
         """
-        logger.debug(f"Toggle menu item {item}")
+        logger.debug("Toggle menu item %s", item)
         if self.icon and self.icon.is_notification_possible():
             return self.config.enabled_notifications
         return False
@@ -177,10 +182,11 @@ class AlertMonitoringApp:
     def is_notifications_disabled(self, item: MenuItem) -> bool:
         """Returns True is notifications in tray are disabled
 
-        :param item: pystay Menu Item object
-        :returns: True, if notifications enabled, False otherwise
+        logger.debug("Toggle menu item %s", item)
+            :param item: pystay Menu Item object
+            :returns: True, if notifications enabled, False otherwise
         """
-        logger.debug(f"Toggle menu item {item}")
+        logger.debug("Toggle menu item %s", item)
         if self.icon and self.icon.is_notification_possible():
             return not self.config.enabled_notifications
         return False
@@ -188,22 +194,24 @@ class AlertMonitoringApp:
     def notify_off(self, icon: "Icon", item: MenuItem) -> None:
         """Disable icon notifications
 
-        :param icon: pystray Icon object
-        :param item: pystay Menu Item object
+            :param icon: pystray Icon object
+        logger.debug("Toggle menu item %s", item)
+            :param item: pystay Menu Item object
         """
         self.config.enabled_notifications = False
         icon.disable_notifications()
-        logger.debug(f"Toggle menu item {item}")
+        logger.debug("Toggle menu item %s", item)
 
     def notify_on(self, icon: "Icon", item: MenuItem) -> None:
         """Enable icon notifications
 
-        :param icon: pystray Icon object
-        :param item: pystay Menu Item object
+        logger.debug("Toggle menu item %s", item)
+            :param icon: pystray Icon object
+            :param item: pystay Menu Item object
         """
         self.config.enabled_notifications = True
         icon.enable_notifications()
-        logger.debug(f"Toggle menu item {item}")
+        logger.debug("Toggle menu item %s", item)
 
     def run(self) -> None:
         """Bootstrap icon, polling thread and start them"""
@@ -230,9 +238,12 @@ class AlertMonitoringApp:
         )
 
         self.start_polling_thread()
-        logger.info(f"Connecting to '{self.config.api_provider}' \
-            'with interval {self.config.api_polling_interval}' \
-            'for region {self.config.region_to_check_alert}")
-        logger.info(f"Tray notifications enabled: {self.config.enabled_notifications}")
+        logger.info(
+            "Connecting to '%s' with interval %s for region %s",
+            self.config.api_provider,
+            self.config.api_polling_interval,
+            self.config.region_to_check_alert,
+        )
+        logger.info("Tray notifications enabled: %s", self.config.enabled_notifications)
 
         self.icon.run()

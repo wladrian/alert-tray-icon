@@ -1,4 +1,5 @@
 """Module contains PollingThread for polling alert results from AlertProviders via API"""
+
 import logging
 import time
 import threading
@@ -44,10 +45,12 @@ class PollingThread(threading.Thread):
                         time.sleep(self.interval * 2)
                         self.interval += 1
 
-            except Exception as exc: # pylint: disable=broad-exception-caught
+            except Exception as exc:  # pylint: disable=broad-exception-caught
                 logger.exception(exc)
                 self.results_queue.put(
-                    AlertProviderResult(status=ProviderResponseStatus.UNKNOWN_PROVIDER_ERROR)
+                    AlertProviderResult(
+                        status=ProviderResponseStatus.UNKNOWN_PROVIDER_ERROR
+                    )
                 )
             if self.stop_event.wait(timeout=self.interval):
                 break

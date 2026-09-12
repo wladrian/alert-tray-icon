@@ -1,4 +1,5 @@
 """Alert provider API ubilling.net.ua"""
+
 import logging
 import requests
 from .base import (
@@ -16,6 +17,7 @@ logger = logging.getLogger("air_alert_icon")
 
 class UbillingProvider(AlertProvider):
     """Alert provider ubilling.net.ua"""
+
     BASE_URL: str = "https://ubilling.net.ua/aerialalerts/"
     REQUEST_LIMIT: int = 5  # seconds
     TIMEOUT: int = 5  # seconds
@@ -23,7 +25,7 @@ class UbillingProvider(AlertProvider):
     def request(self) -> AlertProviderResult:
         result = AlertProviderResult(status=ProviderResponseStatus.INIT)
         try:
-            logger.debug(f"Sending GET request to {self.BASE_URL} ...")
+            logger.debug("Sending GET request to %s ...", self.BASE_URL)
             response = requests.get(self.BASE_URL, timeout=self.TIMEOUT)
 
             if response.status_code == 200:
@@ -49,8 +51,9 @@ class UbillingProvider(AlertProvider):
             if raw_data is None:
                 logger.error("Empty response from API")
                 result.status = ProviderResponseStatus.RESPONSE_EMPTY
+                logger.info("Response json: %s", raw_data)
                 return
-            logger.info(f"Response json: {raw_data}")
+            logger.info("Response json: %s", raw_data)
             result.source = raw_data["source"]
             regions_data = raw_data["states"]
 
@@ -65,11 +68,13 @@ class UbillingProvider(AlertProvider):
                     if state_since == "1970-01-01 03:00:00":
                         state_since = ""
                     alert_state = AlertState(
-                        alert=active_alert, level=AirAlertLevel.UNKNOWN, since=state_since
+                        alert=active_alert,
+                        level=AirAlertLevel.UNKNOWN,
+                        since=state_since,
                     )
                     alert_states[uid] = alert_state
         except KeyError as ex:
-            logger.exception(f"Error while parsing response from server: {ex}")
+            logger.exception("Error while parsing response from server: %s", ex)
             result.status = ProviderResponseStatus.RESPONSE_PARSE_ERROR
             return
         result.states = alert_states
