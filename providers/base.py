@@ -1,8 +1,14 @@
 """Alert provider base class and related structures"""
 
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum, IntEnum, auto
+
+import requests
+from requests import Response
+
+logger = logging.getLogger("air_alert_icon")
 
 
 class AirAlertLevel(Enum):
@@ -11,16 +17,6 @@ class AirAlertLevel(Enum):
     YELLOW = 1  # Single drone
     RED = 2  # Massive drone attack, or ballistic missile, or cruise missile
     UNKNOWN = 3  # Air alert but level could not be determined
-
-
-class AlertType(Enum):
-    """Alert types Enum"""
-
-    AIR_RAID = 1
-    ARTILLERY_SHELLING = 2
-    URBAN_FIGHTS = 3
-    CHEMICAL = 4
-    NUCLEAR = 5
 
 
 class ProviderResponseStatus(IntEnum):
@@ -130,8 +126,39 @@ class AlertProvider(ABC):
         self.api_key = api_key
 
     @abstractmethod
+    def _request(self) -> Response:
+        """Make provider-specific API call
+
+        :returns: Response object
+        """
+
     def request(self) -> AlertProviderResult:
-        """Return provider-specific raw response"""
+        """Make API call to Alert Data Provider
+
+        :returns: AlertProviderResult object
+        """
+        result = AlertProviderResult(status=ProviderResponseStatus.INIT)
+        logger.debug("Sending GET request to %s ...", self.BASE_URL)
+        try:
+            response = self._request()
+        except requests.RequestException as exc:
+            logger.exception(exc)
+            result.status = ProviderResponseStatus.NETWORK_ERROR
+            return result
+
+        if response.status_code == 200:
+            try:
+                result.raw_data = response.json()
+            except requests.exceptions.JSONDecodeError:
+                result.status = ProviderResponseStatus.RESPONSE_PARSE_ERROR
+                return result
+            result.status = ProviderResponseStatus.SUCCESS
+            return result
+
+        result.status = ProviderResponseStatus.API_ERROR
+        result.error_code = response.status_code
+        result.error_message = response.json()
+        return result
 
     @abstractmethod
     def extract_alert_state(self, result: AlertProviderResult) -> None:
@@ -143,3 +170,15 @@ class AlertProvider(ABC):
         if result.status == ProviderResponseStatus.SUCCESS:
             self.extract_alert_state(result)
         return result
+
+    @staticmethod
+    def empty_provider_response(result: AlertProviderResult) -> bool:
+        """Check AlertProviderResult for empty response
+        :param result: AlertProviderResult
+        :returns True if Alert API returned empty payload
+        """
+        if result.raw_data is None:
+            result.status = ProviderResponseStatus.RESPONSE_EMPTY
+            logger.error("Empty response from API.")
+            return True
+        return False

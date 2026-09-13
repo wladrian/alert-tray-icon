@@ -2,6 +2,7 @@
 
 import logging
 import requests
+from requests import Response
 from .base import (
     AlertState,
     AirAlertLevel,
@@ -22,38 +23,18 @@ class UbillingProvider(AlertProvider):
     REQUEST_LIMIT: int = 5  # seconds
     TIMEOUT: int = 5  # seconds
 
-    def request(self) -> AlertProviderResult:
-        result = AlertProviderResult(status=ProviderResponseStatus.INIT)
-        try:
-            logger.debug("Sending GET request to %s ...", self.BASE_URL)
-            response = requests.get(self.BASE_URL, timeout=self.TIMEOUT)
-
-            if response.status_code == 200:
-                try:
-                    result.raw_data = response.json()
-                except requests.exceptions.JSONDecodeError:
-                    result.status = ProviderResponseStatus.RESPONSE_PARSE_ERROR
-                    return result
-                result.status = ProviderResponseStatus.SUCCESS
-                return result
-
-            result.status = ProviderResponseStatus.API_ERROR
-            result.error_code = response.status_code
-            return result
-        except requests.RequestException as exc:
-            logger.exception(exc)
-            result.status = ProviderResponseStatus.NETWORK_ERROR
-        return result
+    def _request(self) -> Response:
+        return requests.get(self.BASE_URL, timeout=self.TIMEOUT)
 
     def extract_alert_state(self, result: AlertProviderResult) -> None:
+        raw_data = result.raw_data
+        if UbillingProvider.empty_provider_response(result):
+            return
+        if raw_data is None:
+            return
+
         try:
-            raw_data = result.raw_data
-            if raw_data is None:
-                logger.error("Empty response from API")
-                result.status = ProviderResponseStatus.RESPONSE_EMPTY
-                logger.info("Response json: %s", raw_data)
-                return
-            logger.info("Response json: %s", raw_data)
+            logger.debug("Response json: %s", raw_data)
             result.source = raw_data["source"]
             regions_data = raw_data["states"]
 
