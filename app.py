@@ -28,8 +28,11 @@ logger = logging.getLogger("air_alert_icon")
 class AlertMonitoringApp:
     """Bootstrap TrayIcon and PollingThread"""
 
-    def __init__(self, configuration: "Configuration") -> None:
+    def __init__(
+        self, configuration: "Configuration", api_keys: dict[str, str]
+    ) -> None:
         self.config = configuration
+        self.api_keys = api_keys
         self.icon: TrayIcon | None = None
         self.polling_thread: PollingThread | None = None
         self.updates_queue: queue.Queue = queue.Queue()
@@ -40,8 +43,9 @@ class AlertMonitoringApp:
         if self.polling_thread is None or not self.polling_thread.is_alive():
             logger.info("Polling thread started!")
             provider = ALERT_PROVIDERS.get(self.config.api_provider, UbillingProvider)
+            api_key: str = self.api_keys.get(self.config.api_provider, "")
             self.polling_thread = PollingThread(
-                alert_provider=provider(""),
+                alert_provider=provider(api_key),
                 interval=self.config.api_polling_interval,
                 results_queue=self.updates_queue,
             )
