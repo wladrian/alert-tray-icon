@@ -18,7 +18,7 @@ def setup_logger() -> None:
     """Setup application logger to log file"""
     logger.setLevel(logging.DEBUG)
     handler = RotatingFileHandler(
-        "air_alert_icon_app.log", maxBytes=2_000_000, backupCount=1, encoding="utf-8"
+        "air_alert_icon_app.log", maxBytes=10_000_000, backupCount=1, encoding="utf-8"
     )
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)

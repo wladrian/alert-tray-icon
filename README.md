@@ -93,13 +93,13 @@ notifications = True
 
 To run the application:
 ```bash
-python main.py
+python alert_tray_icon/main.py
 ```
 
 To create a standalone executable for Windows:
 ```bash
 # Builds a single, self-contained executable
-pyinstaller --onefile --noconsole main.py
+pyinstaller --onefile --noconsole alert_tray_icon/main.py
 ```
 
 ## 🎨 Status Key
@@ -117,13 +117,13 @@ The system tray icon color visually represents the current alert status:
 
 ## 📖 Project Structure
 
-- `main.py`: Start application.
-- `app.py`: Application bootstrap API polling worker and tray icon state updator.
-- `icon.py`: TrayIcon class and related structures.
-- `config.py`: Configuration class. Load/Save .ini file.
-- `worker.py`: PollingThread class responsible for execution of Alert API providers.
-- `providers\base.py`: Base class for AlertProvider
-- `providers\ubilling.py`: Provider class for API of `ubilling.net.ua/aerialalerts`
+- `alert_tray_icon/main.py`: Start application.
+- `alert_tray_icon/app.py`: Application bootstrap API polling worker and tray icon state updator.
+- `alert_tray_icon/icon.py`: TrayIcon class and related structures.
+- `alert_tray_icon/config.py`: Configuration class. Load/Save .ini file.
+- `alert_tray_icon/worker.py`: PollingThread class responsible for execution of Alert API providers.
+- `alert_tray_icon/providers/base.py`: Base class for AlertProvider
+- `alert_tray_icon/providers/ubilling.py`: Provider class for API of `ubilling.net.ua/aerialalerts`
 - `settings.ini`: Configuration file for API details and region.
 - `requirements.txt`: Lists all Python dependencies required for the project to run.
 - `requirements-dev.txt`: Lists all Python dependencies required for the project to run, check and buid.
