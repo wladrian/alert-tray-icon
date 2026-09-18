@@ -12,7 +12,7 @@ from .base import (
 from .ubilling import UbillingProvider
 from .alerts import AlertsInUaProvider
 
-ALERT_PROVIDERS = {
+ALERT_PROVIDERS: dict[str, type[AlertProvider]] = {
     "ubilling.net.ua": UbillingProvider,
     "alerts.in.ua": AlertsInUaProvider,
 }

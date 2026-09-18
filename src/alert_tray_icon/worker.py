@@ -5,7 +5,11 @@ import time
 import threading
 import queue
 
-from providers import AlertProvider, ProviderResponseStatus, AlertProviderResult
+from alert_tray_icon.providers import (
+    AlertProvider,
+    ProviderResponseStatus,
+    AlertProviderResult,
+)
 
 logger = logging.getLogger("air_alert_icon")
 

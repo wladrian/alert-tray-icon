@@ -3,8 +3,8 @@ from pystray import Menu, MenuItem
 from alert_tray_icon.icon import TrayIcon
 
 
-def test_icon_creation():
-    def on_exit():
+def test_icon_creation() -> None:
+    def on_exit() -> None:
         pass
 
     test_menu = Menu(
