@@ -2,6 +2,7 @@
 
 import logging
 import requests
+import datetime
 from requests import Response
 from pydantic import ValidationError
 
@@ -55,8 +56,17 @@ class AlertsInUaProvider(AlertProvider):
             uid = int(active_alert.location_uid)
             if uid not in alert_states:
                 continue
+            now = datetime.datetime.now(datetime.UTC)
+            dt_since = datetime.datetime.strptime(
+                active_alert.started_at, "%Y-%m-%dT%H:%M:%S.%f%z"
+            )
+            datetime_string = "%H:%M"
+            if now - dt_since > datetime.timedelta(days=1):
+                datetime_string += " %d.%m.%Y"
 
-            state_since = active_alert.started_at
+            dt_since = dt_since.astimezone()
+            state_since = dt_since.strftime(datetime_string)
+
             level = (
                 AirAlertLevel.RED
                 if active_alert.alert_level == "red"
