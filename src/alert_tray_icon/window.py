@@ -1,4 +1,5 @@
 """Module of Settings window"""
+
 import tkinter as tk
 from tkinter import ttk
 from typing import Callable
@@ -9,6 +10,7 @@ from alert_tray_icon.providers import REGION_UID_BY_NAME
 
 class SettingsWindow:
     """Window to allow change app settings"""
+
     def __init__(self, configuration: "Configuration", callback: Callable):
         """Init Settings window
 
@@ -32,7 +34,8 @@ class SettingsWindow:
         self.pack_widgets()
 
     def pack_widgets(self) -> None:
-        """Add widgets to window"""
+        """Add widgets to window and configure"""
+        self.root.title("Налаштування")
         self.group_box.pack(padx=20, pady=20, fill="both", expand=True)
         self.cb_region_selection.pack()
         self.btn_save.pack()
