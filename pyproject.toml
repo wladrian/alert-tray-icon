@@ -5,7 +5,9 @@ description = "Alert Tray Icon App"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "pydantic==2.13.5",
     "pystray>=0.19.5",
+    "python-dotenv==1.2.3",
     "requests>=2.34.2",
 ]
 
