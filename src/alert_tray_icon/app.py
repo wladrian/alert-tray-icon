@@ -119,14 +119,14 @@ class AlertMonitoringApp:
                     level_message = "жовтий"
                 case _:
                     color = "crimson"
-                    level_message = "не визначено"
+                    level_message = ""
             self.icon.set_color_and_title(
                 color,
-                f"Тривога в {self.config.region_to_check_alert} {state_since}  ([{data.source}])",
+                f"Тривога в {self.config.region_to_check_alert} {state_since} [{data.source}]",
             )
             if state_changed:
                 self.icon.notify(
-                    f"Оголошено тривогу ({level_message} рівень)!  [{data.source}]"
+                    f"Оголошено тривогу в {self.config.region_to_check_alert} {'{level_message} рівень' if level_message else ""}! [{data.source}]"
                 )
         else:
             logger.debug("As Alert not active, change color to GREEN")
@@ -240,8 +240,8 @@ class AlertMonitoringApp:
         """Create TrayIcon"""
         # Setup menu
         icon_menu = pystray.Menu(
-            MenuItem("Setting", self.show_window),
-            MenuItem("Exit", self.on_exit),
+            MenuItem("Налаштування", self.show_window),
+            MenuItem("Вихід", self.on_exit),
         )
         # Setup the tray icon with dynamic options
         return TrayIcon(

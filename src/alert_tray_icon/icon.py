@@ -88,7 +88,7 @@ class TrayIcon:
         :param message: message text to diplay in notification
         """
         if self.notification_active and self.notification_possible:
-            self.icon.notify(message)
+            self.icon.notify(message, title="Тривога")
 
     def disable_notifications(self) -> None:
         """Disable displaying notifications under the tray block"""
