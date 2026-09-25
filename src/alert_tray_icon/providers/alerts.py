@@ -1,8 +1,9 @@
 """Alert provider API alerts.in.ua"""
 
 import logging
-import requests
 import datetime
+
+import requests
 from requests import Response
 from pydantic import ValidationError
 

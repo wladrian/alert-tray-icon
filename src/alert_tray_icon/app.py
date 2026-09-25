@@ -126,7 +126,8 @@ class AlertMonitoringApp:
             )
             if state_changed:
                 self.icon.notify(
-                    f"Оголошено тривогу в {self.config.region_to_check_alert} {'{level_message} рівень' if level_message else ""}! [{data.source}]"
+                    f"Оголошено тривогу в {self.config.region_to_check_alert}"
+                    "{'{level_message} рівень' if level_message else ""}! [{data.source}]"
                 )
         else:
             logger.debug("As Alert not active, change color to GREEN")
