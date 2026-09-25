@@ -5,14 +5,13 @@ import threading
 import queue
 
 import pystray
-
 from pystray import Icon
 from pystray import MenuItem
 
-from config import Configuration
-from icon import TrayIcon
-from worker import PollingThread
-from providers import (
+from alert_tray_icon.config import Configuration
+from alert_tray_icon.icon import TrayIcon
+from alert_tray_icon.worker import PollingThread
+from alert_tray_icon.providers import (
     AlertProviderResult,
     AirAlertLevel,
     AlertState,
@@ -21,6 +20,7 @@ from providers import (
     ProviderResponseStatus,
     ALERT_PROVIDERS,
 )
+from alert_tray_icon.window import SettingsWindow
 
 logger = logging.getLogger("air_alert_icon")
 
@@ -31,17 +31,35 @@ class AlertMonitoringApp:
     def __init__(
         self, configuration: "Configuration", api_keys: dict[str, str]
     ) -> None:
+        # Config
         self.config = configuration
         self.api_keys = api_keys
-        self.icon: TrayIcon | None = None
+        # GUI
+        self.settings_window = SettingsWindow(configuration, self.withdraw_window)
+        self.icon: TrayIcon = self.create_icon()
+
+        # Model
         self.polling_thread: PollingThread | None = None
         self.updates_queue: queue.Queue = queue.Queue()
         self.alert_status: AlertState | None = None
 
+        self.start_polling_thread()
+        logger.info(
+            "Connecting to '%s' with interval %s for region %s",
+            self.config.api_provider,
+            self.config.api_polling_interval,
+            self.config.region_to_check_alert,
+        )
+        logger.info("Tray notifications enabled: %s", self.config.enabled_notifications)
+
+        self.settings_window.set_hide_mode_on_close()
+        self.withdraw_window()
+        self.settings_window.run()
+
     def start_polling_thread(self) -> None:
         """Create and start polling thread"""
         if self.polling_thread is None or not self.polling_thread.is_alive():
-            logger.info("Polling thread started!")
+            logger.info("Polling thread started for %s", self.config.api_provider)
             provider = ALERT_PROVIDERS.get(self.config.api_provider, UbillingProvider)
             api_key: str = self.api_keys.get(self.config.api_provider, "")
             self.polling_thread = PollingThread(
@@ -101,14 +119,14 @@ class AlertMonitoringApp:
                     level_message = "жовтий"
                 case _:
                     color = "crimson"
-                    level_message = "не визначено"
+                    level_message = ""
             self.icon.set_color_and_title(
                 color,
-                f"Тривога в {self.config.region_to_check_alert} {state_since}  ([{data.source}])",
+                f"Тривога в {self.config.region_to_check_alert} {state_since} [{data.source}]",
             )
             if state_changed:
                 self.icon.notify(
-                    f"Оголошено тривогу ({level_message} рівень)!  [{data.source}]"
+                    f"Оголошено тривогу в {self.config.region_to_check_alert} {'{level_message} рівень' if level_message else ""}! [{data.source}]"
                 )
         else:
             logger.debug("As Alert not active, change color to GREEN")
@@ -170,6 +188,7 @@ class AlertMonitoringApp:
             self.polling_thread.stop()
             self.polling_thread.join()
         icon.stop()
+        self.settings_window.destroy()
 
     def is_notifications_enabled(self, item: MenuItem) -> bool:
         """Returns True is notifications in tray are enabled
@@ -217,37 +236,32 @@ class AlertMonitoringApp:
         icon.enable_notifications()
         logger.debug("Toggle menu item %s", item)
 
-    def run(self) -> None:
-        """Bootstrap icon, polling thread and start them"""
+    def create_icon(self) -> TrayIcon:
+        """Create TrayIcon"""
         # Setup menu
         icon_menu = pystray.Menu(
-            MenuItem(
-                "Turn Off Notifications",
-                self.notify_off,
-                visible=self.is_notifications_enabled,
-            ),
-            MenuItem(
-                "Turn On Notifications",
-                self.notify_on,
-                visible=self.is_notifications_disabled,
-            ),
-            MenuItem("Exit", self.on_exit),
+            MenuItem("Налаштування", self.show_window),
+            MenuItem("Вихід", self.on_exit),
         )
         # Setup the tray icon with dynamic options
-        self.icon = TrayIcon(
+        return TrayIcon(
             title="Дані відсутні",
             color="white",
             menu=icon_menu,
             notifications=self.config.enabled_notifications,
         )
 
-        self.start_polling_thread()
-        logger.info(
-            "Connecting to '%s' with interval %s for region %s",
-            self.config.api_provider,
-            self.config.api_polling_interval,
-            self.config.region_to_check_alert,
-        )
-        logger.info("Tray notifications enabled: %s", self.config.enabled_notifications)
+    def run(self) -> None:
+        """Bootstrap icon, polling thread and start them"""
+        self.icon.run()
 
+    def show_window(self) -> None:
+        """Hide icon and show settings window"""
+        self.icon.stop()
+        self.settings_window.show_window()
+
+    def withdraw_window(self) -> None:
+        """Hide settings window and show icon"""
+        self.settings_window.withdraw()
+        self.icon = self.create_icon()
         self.icon.run()

@@ -37,6 +37,7 @@ class TrayIcon:
         self.color: str = color
         self.title: str = title
         self.notification_active: bool = notifications
+        self.app_name = app_name
         self.icon = pystray.Icon(
             app_name,
             TrayIcon.create_colored_image(self.color),
@@ -75,7 +76,7 @@ class TrayIcon:
     def set_title(self, title: str) -> None:
         """Set title displayed on hover of tray icon
 
-        :param title: Text of hover title of tray icon
+        :param title: Text of hover title §of tray icon
         """
         if title != self.title:
             self.icon.title = title
@@ -87,7 +88,7 @@ class TrayIcon:
         :param message: message text to diplay in notification
         """
         if self.notification_active and self.notification_possible:
-            self.icon.notify(message)
+            self.icon.notify(message, title="Тривога")
 
     def disable_notifications(self) -> None:
         """Disable displaying notifications under the tray block"""
@@ -110,3 +111,7 @@ class TrayIcon:
     def run(self) -> None:
         """Run blocking call of icon run"""
         self.icon.run()
+
+    def stop(self) -> None:
+        """Stop icon run"""
+        self.icon.stop()
