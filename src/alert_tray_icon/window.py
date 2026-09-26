@@ -3,14 +3,16 @@
 import tkinter as tk
 from tkinter import ttk
 from typing import Callable
+import platform
 import ctypes
 from ctypes import wintypes
-import platform
+
 
 from alert_tray_icon.config import Configuration
 from alert_tray_icon.providers import REGION_UID_BY_NAME, ALERT_PROVIDERS
 
 SPI_GETWORKAREA = 0x0030
+
 
 class SettingsWindow:
     """Window to allow change app settings"""
@@ -25,23 +27,26 @@ class SettingsWindow:
         self.callback = callback
         self.root = tk.Tk()
 
+        width, height = 250, 250
+        x, y = 0, 0
         current_os = platform.system()
         if current_os == "Windows":
-            width = 250
-            height = 250
             margin_x = 10
             margin_y = 35
 
             # Get Windows work area (screen area excluding the taskbar)
             work_area = wintypes.RECT()
-            ctypes.windll.user32.SystemParametersInfoW(
+            ctypes.windll.user32.SystemParametersInfoW(  # type: ignore[attr-defined]
                 SPI_GETWORKAREA, 0, ctypes.byref(work_area), 0
             )
 
             x = work_area.right - width - margin_x
             y = work_area.bottom - height - margin_y
 
-            self.root.geometry(f"{width}x{height}+{x}+{y}")
+        if current_os == "Darwin":
+            x = self.root.winfo_screenwidth()
+
+        self.root.geometry(f"{width}x{height}+{x}+{y}")
 
         self.group_box_provider = ttk.LabelFrame(self.root, text="Сервер тривог")
         api_providers = list(ALERT_PROVIDERS.keys())
