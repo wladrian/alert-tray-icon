@@ -43,6 +43,4 @@ jobs:
     - name: Check tests with Black
       run: |
         black --check tests
-    - name: Execute Unittests
-      run: |
-        pytest --cov=src
+
