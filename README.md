@@ -6,7 +6,10 @@ Idea was to have quickly visible state of Air alert as tray icon.
 
 This project is designed for ease of use and minimal system resource consumption, providing real-time alerts based on external API data.
 
-WARNING: **Please, use _official source as primary source_ for alerts and do not rely only on this application**. Application provided AS IS, without any guarantee and use non-official volunteer's API to receive information about alerts. These sources do not provide any guarantee for accuracy or promptness of data. 
+## WARNING:
+> ❗❗❗ **Please, use _official source as primary source_ for alerts and do not rely only on this application**. 
+
+Application provided AS IS, without any guarantee and use **non-official volunteer's APIs** to receive information about alerts. These sources do not provide any guarantee for accuracy or promptness of data. 
 
 ## 🚀 Features
 
@@ -37,13 +40,23 @@ pip install -r requirements.txt
 ```
 
 ### 3. Configure Settings
-The application uses `settings.ini` to connect to the air alert API. You must customize this file:
+The application allow to configure region of monitoring and Alert provider in settings window.
+Please, use proxy server to not abuse usage of free APIs.
+
+|API Provder|Direct/Proxy|Posibilities|
+|---|---|---|
+|proxy.alerts.in.ua|Proxy|Levels of alerts, alerts for different levels of regions (currently app support only oblast level and Kyiv|
+|proxy.ubilling.net.ua|Proxy|Just air alert, no alerts levels, only regions|
+|ubilling.net.ua|Direct|Just air alert, no alerts levels, only regions|
+
+
+Also you could use `settings.ini` manually change settings:
 
 `settings.ini`
 ```ini
 [server]
 # Name of Alert API provider
-name = "ubilling.net.ua"
+name = "proxy.alerts.in.ua"
 # How often (in seconds) the application should poll the API
 interval = 5
 
@@ -112,8 +125,8 @@ The system tray icon color visually represents the current alert status:
 | **🔴 Crimson** | **Alert**    | Active air alert status has been received from the API. No data from API related to threat level received.   |
 | **🔴 Red**     | **Alert: Red level**    | Active air alert status. Threat level is Red (high): ballistic missile, cruise missile, massive drone attack |
 | **🟡 Yellow**  | **Alert: Yellow level** | Active air alert status. Threat level is Yellow (medium): drone attack                                       |
-| **⚫ Gray**     | **Initial/No Data**     | The application has initialized but has not yet received sufficient data to determine a status.              |
-| **⚫ Black**    | **Connection Failure**  | A persistent network issue or API connection failure occurred (e.g., DNS error, timeout).                    |
+| **⚪ White**     | **Initial/No Data**     | The application has initialized but has not yet received sufficient data to determine a status.              |
+| **⚫ Black**    | **Failure**  | A persistent network issue or API connection failure occurred (e.g., DNS error, timeout).                    |
 
 ## 📖 Project Structure
 
@@ -124,6 +137,7 @@ The system tray icon color visually represents the current alert status:
 - `alert_tray_icon/worker.py`: PollingThread class responsible for execution of Alert API providers.
 - `alert_tray_icon/providers/base.py`: Base class for AlertProvider
 - `alert_tray_icon/providers/ubilling.py`: Provider class for API of `ubilling.net.ua/aerialalerts`
+- `alert_tray_icon/providers/alerts.py`: Provider class for API of `alerts.in.ua`
 - `settings.ini`: Configuration file for API details and region.
 - `requirements.txt`: Lists all Python dependencies required for the project to run.
 - `requirements-dev.txt`: Lists all Python dependencies required for the project to run, check and buid.

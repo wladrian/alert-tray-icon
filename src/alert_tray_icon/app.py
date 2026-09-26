@@ -3,6 +3,7 @@
 import logging
 import threading
 import queue
+from copy import deepcopy
 
 import pystray
 from pystray import Icon
@@ -33,6 +34,7 @@ class AlertMonitoringApp:
     ) -> None:
         # Config
         self.config = configuration
+        self.config_backup = deepcopy(configuration)
         self.api_keys = api_keys
         # GUI
         self.settings_window = SettingsWindow(configuration, self.withdraw_window)
@@ -41,6 +43,7 @@ class AlertMonitoringApp:
         # Model
         self.polling_thread: PollingThread | None = None
         self.updates_queue: queue.Queue = queue.Queue()
+        self.result_listener: threading.Thread | None = None
         self.alert_status: AlertState | None = None
 
         self.start_polling_thread()
@@ -68,7 +71,10 @@ class AlertMonitoringApp:
                 results_queue=self.updates_queue,
             )
             self.polling_thread.start()
-            threading.Thread(target=self.poll_queue_listener, daemon=True).start()
+            self.result_listener = threading.Thread(
+                target=self.poll_queue_listener, daemon=True
+            )
+            self.result_listener.start()
 
     def set_alert_status(self, data: AlertProviderResult) -> None:
         """Set status of alert for TrayIcon based on data received from AlertProvider
@@ -126,8 +132,8 @@ class AlertMonitoringApp:
             )
             if state_changed:
                 self.icon.notify(
-                    f"Оголошено тривогу в {self.config.region_to_check_alert}"
-                    f"{'{level_message} рівень' if level_message else ""}! [{data.source}]"
+                    f"Оголошено тривогу в {self.config.region_to_check_alert} - "
+                    f"{level_message + ' рівень' if level_message else ""}! [{data.source}]"
                 )
         else:
             logger.debug("As Alert not active, change color to GREEN")
@@ -264,5 +270,21 @@ class AlertMonitoringApp:
     def withdraw_window(self) -> None:
         """Hide settings window and show icon"""
         self.settings_window.withdraw()
+        self.check_provider_change()
         self.icon = self.create_icon()
         self.icon.run()
+
+    def check_provider_change(self) -> None:
+        """Check change of API provider and restart polling"""
+        if self.config_backup.api_provider != self.config.api_provider:
+            logger.info("Changed API provider to %s", self.config.api_provider)
+            # Stop current API polling
+            if self.polling_thread is not None:
+                self.polling_thread.stop()
+                self.polling_thread.join()
+            if self.result_listener is not None:
+                self.result_listener.join()
+            # Start new API polling
+            self.start_polling_thread()
+            # Update backup
+            self.config_backup = deepcopy(self.config)
