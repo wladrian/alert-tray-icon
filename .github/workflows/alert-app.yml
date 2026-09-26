@@ -45,4 +45,4 @@ jobs:
         black --check tests
     - name: Execute Unittests
       run: |
-        pytests --cov=src
+        pytest --cov=src
