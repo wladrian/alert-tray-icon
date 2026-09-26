@@ -59,3 +59,9 @@ class UbillingProvider(AlertProvider):
             result.status = ProviderResponseStatus.RESPONSE_PARSE_ERROR
             return
         result.states = alert_states
+
+
+class ProxyUbillingProvider(UbillingProvider):
+    """Alert provider ubilling.net.ua via proxy"""
+
+    BASE_URL: str = "https://proxy-alerts-server.fastapicloud.dev/provider/ubilling"

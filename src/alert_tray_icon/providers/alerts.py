@@ -85,3 +85,9 @@ class AlertsInUaProvider(AlertProvider):
             alert_states[uid] = alert_state
 
         result.states = alert_states
+
+
+class ProxyAlertsInUaProvider(AlertsInUaProvider):
+    """Alert provider alerts.in.ua via proxy"""
+
+    BASE_URL: str = "https://proxy-alerts-server.fastapicloud.dev/provider/alerts_in_ua"
