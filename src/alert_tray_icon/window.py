@@ -10,6 +10,7 @@ from ctypes import wintypes
 
 from alert_tray_icon.config import Configuration
 from alert_tray_icon.providers import REGION_UID_BY_NAME, ALERT_PROVIDERS
+from alert_tray_icon._version import __version__
 
 SPI_GETWORKAREA = 0x0030
 
@@ -27,7 +28,41 @@ class SettingsWindow:
         self.callback = callback
         self.root = tk.Tk()
 
-        width, height = 250, 250
+        self.group_box_provider = ttk.LabelFrame(self.root, text="Сервер тривог")
+        api_providers = list(ALERT_PROVIDERS.keys())
+        self.cb_provider_selection = ttk.Combobox(
+            self.group_box_provider, values=api_providers, state="readonly"
+        )
+        self.group_box = ttk.LabelFrame(
+            self.root, text="Регіон моніторингу", padding=10
+        )
+        regions = list(REGION_UID_BY_NAME.keys())
+        self.cb_region_selection = ttk.Combobox(
+            self.group_box, values=regions, state="readonly"
+        )
+        if self.config.region_to_check_alert in regions:
+            self.cb_region_selection.set(self.config.region_to_check_alert)
+        if self.config.api_provider in api_providers:
+            self.cb_provider_selection.set(self.config.api_provider)
+        self.notif_var = tk.BooleanVar()
+        self.checkbox_notifications = ttk.Checkbutton(
+            self.root,
+            text="Нотифікації",
+            padding=20,
+            variable=self.notif_var,
+            onvalue=True,
+            offvalue=False,
+        )
+        self.notif_var.set(self.config.enabled_notifications)
+        self.lbl_version = ttk.Label(
+            self.root, text=f"Alert Tray Icon v.{__version__}", font=("Courier", 10)
+        )
+        self.btn_save = ttk.Button(
+            self.root, text="Зберегти", command=self.save_settings
+        )
+        self.pack_widgets()
+
+        width, height = 250, 330
         x, y = 0, 0
         current_os = platform.system()
         if current_os == "Windows":
@@ -45,29 +80,9 @@ class SettingsWindow:
 
         if current_os == "Darwin":
             x = self.root.winfo_screenwidth()
+            self.checkbox_notifications.state(["disabled"])
 
         self.root.geometry(f"{width}x{height}+{x}+{y}")
-
-        self.group_box_provider = ttk.LabelFrame(self.root, text="Сервер тривог")
-        api_providers = list(ALERT_PROVIDERS.keys())
-        self.cb_provider_selection = ttk.Combobox(
-            self.group_box_provider, values=api_providers, state="readonly"
-        )
-        self.group_box = ttk.LabelFrame(
-            self.root, text="Регіон моніторингу", padding=10
-        )
-        regions = list(REGION_UID_BY_NAME.keys())
-        self.cb_region_selection = ttk.Combobox(
-            self.group_box, values=regions, state="readonly"
-        )
-        if self.config.region_to_check_alert in regions:
-            self.cb_region_selection.set(self.config.region_to_check_alert)
-        if self.config.api_provider in api_providers:
-            self.cb_provider_selection.set(self.config.api_provider)
-        self.btn_save = ttk.Button(
-            self.root, text="Зберегти", command=self.save_settings
-        )
-        self.pack_widgets()
 
     def pack_widgets(self) -> None:
         """Add widgets to window and configure"""
@@ -76,6 +91,9 @@ class SettingsWindow:
         self.group_box.pack(padx=20, pady=20, fill="both", expand=True)
         self.cb_provider_selection.pack()
         self.cb_region_selection.pack()
+        self.checkbox_notifications.pack()
+        self.lbl_version.pack()
+
         self.btn_save.pack()
 
     def withdraw(self) -> None:
@@ -103,5 +121,6 @@ class SettingsWindow:
         """Save app settings selected in window"""
         self.config.region_to_check_alert = self.cb_region_selection.get()
         self.config.api_provider = self.cb_provider_selection.get()
+        self.config.enabled_notifications = self.notif_var.get()
         self.config.save_config()
         self.callback()
