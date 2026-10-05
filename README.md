@@ -124,14 +124,15 @@ The system tray icon color visually represents the current alert status:
 | **🔴 Red**     | **Alert: Red level**    | Active air alert status. Threat level is Red (high): ballistic missile, cruise missile, massive drone attack |
 | **🟡 Yellow**  | **Alert: Yellow level** | Active air alert status. Threat level is Yellow (medium): drone attack                                       |
 | **⚪ White**    | **Initial/No Data**     | The application has initialized but has not yet received sufficient data to determine a status.              |
+| **🔵 Blue**    | **Config Error**        | Wrong app configuration (location to check, etc)                                                             |
 | **⚫ Black**    | **Failure**             | A persistent network issue or API connection failure occurred (e.g., DNS error, timeout).                    |
 
 ## OS Support
-| OS          | Support | Executable           | Limitations                                                         |
-|:------------|---------|----------------------|---------------------------------------------------------------------|
-| **Windows** | Full    | Available            |                                         
-| **MacOS**   | Limited | No, source code only | No notification messages, change info when on hover cause app crash |
-| **Linux**   | Unknown | Not checked          | Not checked                                                         |
+| OS          | Support | Executable  | Limitations                                        |
+|:------------|---------|-------------|----------------------------------------------------|
+| **Windows** | Full    | Available   |                                         
+| **MacOS**   | Limited | Unsigned    | No notification messages, no details on icon hover |
+| **Linux**   | Unknown | Not checked | Not checked                                        |
 ## 📄 License
 
 This project is licensed under the [GNU GPL v3](LICENSE). See the [LICENSE](LICENSE) file for details.

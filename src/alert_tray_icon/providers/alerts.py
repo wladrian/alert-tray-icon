@@ -12,10 +12,9 @@ from .base import (
     AirAlertLevel,
     AlertProvider,
     AlertProviderResult,
-    RegionUID,
     ProviderResponseStatus,
 )
-from .models import ActiveAlertsResponse
+from .models import ActiveAlertsResponse, AlertsInUaLocations
 
 logger = logging.getLogger("air_alert_icon")
 
@@ -50,13 +49,10 @@ class AlertsInUaProvider(AlertProvider):
             result.status = ProviderResponseStatus.RESPONSE_PARSE_ERROR
             return
 
-        alert_states: dict[int, AlertState | None] = dict.fromkeys(
-            [e.value for e in RegionUID], None
-        )
+        alert_states: dict[int, AlertState | None] = {}
+
         for active_alert in active_alerts_data.alerts:
             uid = int(active_alert.location_uid)
-            if uid not in alert_states:
-                continue
             now = datetime.datetime.now(datetime.UTC)
             dt_since = datetime.datetime.strptime(
                 active_alert.started_at, "%Y-%m-%dT%H:%M:%S.%f%z"
@@ -84,10 +80,44 @@ class AlertsInUaProvider(AlertProvider):
             )
             alert_states[uid] = alert_state
 
-        result.states = alert_states
+        result.alerts_by_location = alert_states
 
 
 class ProxyAlertsInUaProvider(AlertsInUaProvider):
     """Alert provider alerts.in.ua via proxy"""
 
     BASE_URL: str = "https://proxy-alerts-server.fastapicloud.dev/provider/alerts_in_ua"
+    LOCATIONS_URL: str = (
+        "https://proxy-alerts-server.fastapicloud.dev/provider/alerts_in_ua/locations"
+    )
+
+    def request_locations(self) -> AlertsInUaLocations:
+        """Make API call to request locations available to monitor alerts on alerts.in.ua
+
+        :raises RuntimeError: When API response not received, or response code is not OK, or json could not be parsed,
+                When provided JSON data from API could not be validated
+        :returns: AlertsInUaLocations object
+        """
+        response: Response | None = None
+        for _ in range(3):
+            try:
+                logger.debug("Sending GET request to %s ...", self.LOCATIONS_URL)
+                response = requests.get(self.LOCATIONS_URL, timeout=3)
+                break
+            except requests.RequestException as exc:
+                logger.exception(exc)
+        if response is None or response.status_code != 200:
+            raise RuntimeError("Could not received locations")
+
+        try:
+            raw_data = response.json()
+        except requests.exceptions.JSONDecodeError as exc:
+            raise RuntimeError("Could not parse data of received locations") from exc
+
+        try:
+            result = AlertsInUaLocations.model_validate(raw_data)
+        except ValidationError as exc:
+            logger.exception(exc)
+            raise RuntimeError("Invalid structure of location data") from exc
+
+        return result

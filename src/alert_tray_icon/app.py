@@ -17,10 +17,12 @@ from alert_tray_icon.providers import (
     AirAlertLevel,
     AlertState,
     UbillingProvider,
-    REGION_UID_BY_NAME,
     ProviderResponseStatus,
     ALERT_PROVIDERS,
+    ProxyAlertsInUaProvider,
 )
+from alert_tray_icon.providers.models import Location, DescriptionLocationType
+from alert_tray_icon.providers.base import UID_TO_REGION
 from alert_tray_icon.window import SettingsWindow
 
 logger = logging.getLogger("air_alert_icon")
@@ -36,6 +38,8 @@ class AlertMonitoringApp:
         self.config = configuration
         self.config_backup = deepcopy(configuration)
         self.api_keys = api_keys
+        self.config.locations = self.get_locations()
+
         # GUI
         self.settings_window = SettingsWindow(configuration, self.withdraw_window)
         self.icon: TrayIcon = self.create_icon()
@@ -46,15 +50,17 @@ class AlertMonitoringApp:
         self.result_listener: threading.Thread | None = None
         self.alert_status: AlertState | None = None
 
+        # Polling alerts
         self.start_polling_thread()
         logger.info(
-            "Connecting to '%s' with interval %s for region %s",
+            "Connecting to '%s' with interval %s for location UID %s",
             self.config.api_provider,
             self.config.api_polling_interval,
-            self.config.region_to_check_alert,
+            self.config.location_uid_to_check_alert,
         )
         logger.info("Tray notifications enabled: %s", self.config.enabled_notifications)
 
+        # GUI take control of main loop
         self.settings_window.set_hide_mode_on_close()
         self.withdraw_window()
         self.settings_window.run()
@@ -81,70 +87,100 @@ class AlertMonitoringApp:
 
         :param data: AlertState object
         """
-        state_changed = False
         if self.icon is None:
             logger.warning("Tray Icon object is not created")
             return
 
-        if data.states is None:
+        if data.alerts_by_location is None:
             logger.warning("Empty alert data from provider")
             return
 
-        try:
-            region_uid = REGION_UID_BY_NAME[self.config.region_to_check_alert]
-        except KeyError as exc:
-            logger.exception(exc)
+        location_uid = int(self.config.location_uid_to_check_alert)
+        if location_uid not in self.config.locations:
             self.icon.set_color_and_title(
-                "black", f"Регіон {self.config.region_to_check_alert} не знайдено"
+                "blue",
+                "Регіон моніторингу помилковий або не встановлений",
             )
             return
-        alert_data = data.states[region_uid]
+        location_name = self.config.locations[location_uid].name
+
+        locations_to_check = [location_uid]
+        if not self.config.locations[location_uid].separate_alarm:
+            limit = 3
+            location = self.config.locations[location_uid]
+            while location.parent_uid is not None and limit > 0:
+                locations_to_check.append(location.parent_uid)
+                location = self.config.locations[location.parent_uid]
+                limit -= 1
+
+        alert_data = None
+        alert_data_list = [
+            data.alerts_by_location.get(uid) for uid in locations_to_check
+        ]
+        for alert_data_elem in alert_data_list:
+            if alert_data_elem is not None:
+                alert_data = alert_data_elem
+                break
+        color, title, state_changed = self._determine_color_and_title_by_alert(
+            location_name, alert_data, data.source
+        )
+        self.icon.set_color_and_title(color, title)
+
+        if state_changed:
+            msg = (
+                f"Оголошено тривогу в {location_name}! [{data.source}]"
+                if color in ["red", "yellow"]
+                else ""
+            )
+            msg = f"Відбій тривоги  [{data.source}]" if color == "green" else msg
+            self.icon.notify(msg)
+
+        self.alert_status = alert_data
+
+    def _determine_color_and_title_by_alert(
+        self, location_name: str, alert_data: AlertState | None, source: str | None
+    ) -> tuple[str, str, bool]:
+        """Determine color by alert data
+
+        :param location_name: Location name
+        :param alert_data: Alert data from provider
+        :param source: Source of alert data
+        :returns: (color, title, state_changed)
+        """
+        state_changed: bool = self.alert_status != alert_data
+        source = "" if source is None else source
+
         if alert_data is None:
-            self.icon.set_color_and_title(
+            return (
                 "green",
-                f"Немає тривоги в {self.config.region_to_check_alert} [{data.source}]",
+                f"Немає тривоги в " f"{location_name} [{source}]",
+                state_changed,
             )
-            return
-        if self.alert_status != alert_data:
-            logger.debug(
-                "There is change in alert status for %s",
-                self.config.region_to_check_alert,
-            )
-            state_changed = True
 
         state_since = f" з {alert_data.since}" if alert_data.since else ""
+        logger.debug(
+            "There is%s change in alert status for %s",
+            "" if state_changed else " no",
+            location_name,
+        )
 
-        if alert_data.alert:
-            logger.debug("As Alert active, change color...")
-            match alert_data.level:
-                case AirAlertLevel.RED:
-                    color = "red"
-                    level_message = "червоний"
-                case AirAlertLevel.YELLOW:
-                    color = "yellow"
-                    level_message = "жовтий"
-                case _:
-                    color = "crimson"
-                    level_message = ""
-            self.icon.set_color_and_title(
-                color,
-                f"Тривога в {self.config.region_to_check_alert} {state_since} [{data.source}]",
-            )
-            if state_changed:
-                self.icon.notify(
-                    f"Оголошено тривогу в {self.config.region_to_check_alert} - "
-                    f"{level_message + ' рівень' if level_message else ""}! [{data.source}]"
-                )
-        else:
-            logger.debug("As Alert not active, change color to GREEN")
-            self.icon.set_color_and_title(
+        if not alert_data.alert:
+            return (
                 "green",
-                f"Немає тривоги в "
-                f"{self.config.region_to_check_alert}{state_since} [{data.source}]",
+                f"Немає тривоги в " f"{location_name}{state_since} [{source}]",
+                state_changed,
             )
-            if state_changed and self.alert_status:
-                self.icon.notify(f"Відбій тривоги  [{data.source}]")
-        self.alert_status = alert_data
+
+        match alert_data.level:
+            case AirAlertLevel.RED:
+                color = "red"
+            case AirAlertLevel.YELLOW:
+                color = "yellow"
+            case _:
+                color = "crimson"
+
+        title = f"Тривога в {location_name} {state_since} [{source}]"
+        return color, title, state_changed
 
     def handle_worker_update(self, response: AlertProviderResult) -> None:
         """Handle update from polling thread and update tray icon state
@@ -250,9 +286,12 @@ class AlertMonitoringApp:
             MenuItem("Налаштування", self.show_window),
             MenuItem("Вихід", self.on_exit),
         )
+
+        default_title = f"Стан тривоги в {self.config.location_name} [{self.config.api_provider.strip('proxy.')}]"
+
         # Setup the tray icon with dynamic options
         return TrayIcon(
-            title="Дані відсутні",
+            title=default_title,
             color="white",
             menu=icon_menu,
             notifications=self.config.enabled_notifications,
@@ -288,3 +327,36 @@ class AlertMonitoringApp:
             self.start_polling_thread()
             # Update backup
             self.config_backup = deepcopy(self.config)
+
+    @staticmethod
+    def get_locations() -> dict[int, Location]:
+        """Request locations dictionary from API of proxy server"""
+        provider = ProxyAlertsInUaProvider("")
+        locations = {}
+        try:
+            data = provider.request_locations()
+        except RuntimeError as exc:
+            logger.exception(exc)
+            # Return common locations
+            for uid, name in UID_TO_REGION.items():
+                if uid == 31:
+                    locations[uid] = Location(
+                        uid=uid,
+                        name=name,
+                        location_type=DescriptionLocationType.CITY_SPECIAL,
+                        separate_alarm=False,
+                        parent_uid=None,
+                    )
+                locations[uid] = Location(
+                    uid=uid,
+                    name=name,
+                    location_type=DescriptionLocationType.OBLAST,
+                    separate_alarm=False,
+                    parent_uid=None,
+                )
+
+            return locations
+
+        for location in data.locations:
+            locations[int(location.uid)] = location
+        return locations

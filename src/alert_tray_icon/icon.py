@@ -78,6 +78,8 @@ class TrayIcon:
 
         :param title: Text of hover title §of tray icon
         """
+        if not self.notification_possible:
+            return
         if title != self.title:
             self.icon.title = title
             self.title = title
@@ -87,7 +89,7 @@ class TrayIcon:
 
         :param message: message text to diplay in notification
         """
-        if self.notification_active and self.notification_possible:
+        if self.notification_active and self.notification_possible and message:
             self.icon.notify(message, title="Тривога")
 
     def disable_notifications(self) -> None:

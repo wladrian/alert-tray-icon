@@ -14,6 +14,33 @@ class LocationType(StrEnum):
     UNKNOWN = "unknown"
 
 
+class DescriptionLocationType(StrEnum):
+    """Location type Enum"""
+
+    OBLAST = "Область"
+    RAION = "Район"
+    HROMADA = "Громада"
+    CITY_SPECIAL = "Місто з спеціальним статусом"
+
+
+class Location(BaseModel):
+    """Location of alert"""
+
+    uid: int
+    name: str
+    location_type: DescriptionLocationType
+    separate_alarm: bool
+    parent_uid: int | None
+
+
+class AlertsInUaLocations(BaseModel):
+    """Full list of alert locations"""
+
+    locations: list["Location"]
+    country: str
+    updated_at: str
+
+
 class AlertType(StrEnum):
     """Alert type Enum"""
 

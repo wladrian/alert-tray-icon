@@ -58,7 +58,7 @@ class UbillingProvider(AlertProvider):
             logger.exception("Error while parsing response from server: %s", ex)
             result.status = ProviderResponseStatus.RESPONSE_PARSE_ERROR
             return
-        result.states = alert_states
+        result.alerts_by_location = alert_states
 
 
 class ProxyUbillingProvider(UbillingProvider):

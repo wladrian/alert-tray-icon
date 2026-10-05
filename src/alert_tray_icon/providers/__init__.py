@@ -8,6 +8,7 @@ from .base import (
     ProviderResponseStatus,
     RegionUID,
     REGION_UID_BY_NAME,
+    UID_TO_REGION,
 )
 from .ubilling import UbillingProvider, ProxyUbillingProvider
 from .alerts import AlertsInUaProvider, ProxyAlertsInUaProvider
