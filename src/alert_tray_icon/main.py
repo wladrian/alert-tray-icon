@@ -20,7 +20,9 @@ def setup_logger() -> None:
     handler = RotatingFileHandler(
         "air_alert_icon_app.log", maxBytes=10_000_000, backupCount=1, encoding="utf-8"
     )
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(filename)s - %(lineno)d -  %(levelname)s - %(message)s"
+    )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 

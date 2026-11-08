@@ -35,7 +35,7 @@ class PollingThread(threading.Thread):
             try:
                 alert_result: AlertProviderResult = self.alert_provider.get_data()
                 logger.debug(alert_result)
-                if alert_result.status == ProviderResponseStatus.SUCCESS:
+                if alert_result.status != ProviderResponseStatus.API_ERROR:
                     self.results_queue.put(alert_result)
                 else:
                     if (
